@@ -11,12 +11,20 @@ import { seedDatabase } from './seed/seed';
 import session from 'express-session';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from './entities/User';
 
 // Extend Express Request type to include session
 declare module 'express-session' {
   interface SessionData {
     userId?: string;
   }
+}
+
+interface Context {
+  req: Request;
+  res: Response;
+  session: any;
+  user?: User;
 }
 
 const startServer = async () => {
@@ -65,11 +73,22 @@ const startServer = async () => {
       express.json(),
       expressMiddleware(server, {
         context: async ({ req, res }: { req: Request; res: Response }) => {
-          return {
+          const context: Context = {
             req,
             res,
             session: req.session
           };
+
+          // Load user if session exists
+          if (req.session.userId) {
+            const userRepository = AppDataSource.getRepository(User);
+            const user = await userRepository.findOneBy({ id: req.session.userId });
+            if (user) {
+              context.user = user;
+            }
+          }
+
+          return context;
         }
       })
     );

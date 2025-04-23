@@ -30,13 +30,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ show, onHide, onAuthSucces
     e.preventDefault();
     setError('');
 
-    console.log(email, password);
-
     try {
       const { data } = await login();
-      console.log(data);
       if (data?.login) {
-        localStorage.setItem('token', data.login.id);
+        sessionStorage.setItem('userID', data.login.id);
         onAuthSuccess();
         onHide();
       }
@@ -59,7 +56,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ show, onHide, onAuthSucces
         }
       });
       if (data?.register) {
-        localStorage.setItem('token', data.register.id);
+        sessionStorage.setItem('userID', data.register.id);
         onAuthSuccess();
         onHide();
       }

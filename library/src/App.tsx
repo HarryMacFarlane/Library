@@ -10,8 +10,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    const userID = sessionStorage.getItem('userID');
+    setIsAuthenticated(!!userID);
   }, []);
 
   const handleAuthSuccess = () => {
@@ -19,7 +19,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('userID');
     setIsAuthenticated(false);
   };
 
