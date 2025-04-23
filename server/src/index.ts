@@ -8,6 +8,16 @@ import { resolvers } from './resolvers';
 import { initializeDatabase } from './config/database';
 import cors from 'cors';
 import { seedDatabase } from './seed/seed';
+import session from 'express-session';
+import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+
+// Extend Express Request type to include session
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
 
 const startServer = async () => {
   try {
@@ -18,6 +28,24 @@ const startServer = async () => {
     // Create Express app
     const app = express();
 
+    // Session configuration
+    app.use(session({
+      secret: 'your-secret-key', // Change this to a secure secret in production
+      resave: false,
+      saveUninitialized: false,
+      genid: () => {
+        return uuidv4();
+      },
+      name: "qid",
+      cookie: {
+        signed: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      }
+    }));
+
     // Create Apollo Server
     const server = new ApolloServer({
       typeDefs,
@@ -27,15 +55,24 @@ const startServer = async () => {
 
     // Start Apollo Server
     await server.start();
+
     // Apply middleware
-    app.use('/graphql', cors(
-        {
-            origin: 'http://localhost:5173',
-            credentials: true,
+    app.use('/graphql', 
+      cors({
+        origin: 'http://localhost:5173',
+        credentials: true,
+      }),
+      express.json(),
+      expressMiddleware(server, {
+        context: async ({ req, res }: { req: Request; res: Response }) => {
+          return {
+            req,
+            res,
+            session: req.session
+          };
         }
-    ), 
-    express.json(), 
-    expressMiddleware(server));
+      })
+    );
 
     // Start server
     const PORT = process.env.PORT || 4000;
