@@ -4,10 +4,13 @@ import { Table, Button, Form, InputGroup, Badge } from 'react-bootstrap';
 import { GET_BOOKS, DELETE_BOOK, TOGGLE_BOOK_STATUS } from '../../graphql/operations/books';
 import { Book } from '../../types/book';
 import { CreateBookModal } from './CreateBookModal';
+import { EditBookModal } from './EditBookModal';
 
 export const BookList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { data, loading, error, refetch } = useQuery(GET_BOOKS, {
     fetchPolicy: 'network-only', // Always fetch fresh data
@@ -47,6 +50,11 @@ export const BookList = () => {
     } catch (error) {
       console.error('Error toggling book status:', error);
     }
+  };
+
+  const handleEditClick = (book: Book) => {
+    setSelectedBook(book);
+    setShowEditModal(true);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -92,7 +100,7 @@ export const BookList = () => {
                     variant="outline-primary"
                     size="sm"
                     className="me-2"
-                    onClick={() => console.log('Edit book:', book.id)}
+                    onClick={() => handleEditClick(book)}
                   >
                     Edit
                   </Button>
@@ -125,6 +133,20 @@ export const BookList = () => {
           await refetch();
           setShowCreateModal(false);
         }}
+      />
+
+      <EditBookModal
+        show={showEditModal}
+        onHide={() => {
+          setShowEditModal(false);
+          setSelectedBook(null);
+        }}
+        onBookUpdated={async () => {
+          await refetch();
+          setShowEditModal(false);
+          setSelectedBook(null);
+        }}
+        book={selectedBook}
       />
     </div>
   );
